@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Oil Spill Detection System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css">
+    <style>
+        :root {
+            --primary-green: #0066cc;
+            --dark-green: #004d99;
+            --light-green: #e8f5e9;
+            --accent-green:#4da6ff;
+            --text-dark: #2c3e50;
+            --text-medium: #4a5568;
+            --text-light: #718096;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: var(--text-medium);
+            
+            background-image:  url('https://i.pinimg.com/originals/52/65/88/526588eb3b6cf77e42bd1818adfe52a7.gif');
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .toc-container {
+            background: linear-gradient(135deg, var(--light-green), #d4edda);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2.5rem;
+            border: 1px solid var(--accent-green);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .toc-title {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-green);
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .toc-list {
+            columns: 2;
+            padding-left: 1.5rem;
+        }
+        
+        .toc-list li {
+            margin-bottom: 0.75rem;
+            break-inside: avoid;
+        }
+        
+        .toc-list a {
+            color: var(--primary-green);
+            text-decoration: none;
+            transition: var(--transition);
+            font-weight: 500;
+            display: inline-block;
+            padding: 0.25rem 0;
+        }
+        
+        .toc-list a:hover {
+            color: var(--dark-green);
+            transform: translateX(5px);
+        }
+        
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+        
+        h1, h2, h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-dark);
+        }
+        
+        h1 {
+            color: var(--primary-green);
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-green);
+            border-radius: 2px;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin-top: 3.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--light-green);
+            position: relative;
+        }
+        
+        h2::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100px;
+            height: 2px;
+            background: var(--primary-green);
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            margin-top: 2.5rem;
+            margin-bottom: 1.2rem;
+        }
+        
+        .content-section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 100px;
+        }
+        
+        .image-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+        }
+        
+        .image-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        
+        .image-card:hover img {
+            transform: scale(1.05);
+        }
+        
+        .image-caption {
+            padding: 1.25rem;
+            font-size: 0.95rem;
+            color: var(--text-medium);
+            background: var(--white);
+        }
+        
+        .data-panel {
+            background: linear-gradient(135deg, var(--light-green), #d4edda);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            margin: 4rem 0;
+            border: 1px solid var(--accent-green);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .data-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .data-item {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: var(--white);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        
+        .data-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .data-value {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin: 0.75rem 0;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        .tech-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+        }
+        
+        .spec-card {
+            background: var(--white);
+            padding: 1.8rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary-green);
+        }
+        
+        .spec-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .spec-card h3 {
+            margin-top: 0;
+        }
+        
+        .references {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(232,245,233,0.95));
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            margin-top: 4rem;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem 0 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        /* Real-time monitoring button */
+        .monitoring-button {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, rgba(125, 46, 46, 0.973), rgba(94, 27, 27, 0.966));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+            text-decoration: none;
+        }
+        
+        .monitoring-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        /* Map container */
+        #spillMap {
+            height: 400px;
+            width: 100%;
+            border-radius: var(--border-radius);
+            z-index: 1;
+        }
+        
+        /* Alert system */
+        .alert-panel {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4444;
+            color: white;
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            font-family: 'Montserrat', sans-serif;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+        }
+        
+        .alert-panel i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            max-width: 1000px;
+            margin: 3rem auto;
+        }
+        
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background: var(--primary-green);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+        }
+        
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            width: 50%;
+            box-sizing: border-box;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--white);
+            border: 4px solid var(--primary-green);
+            border-radius: 50%;
+            top: 15px;
+            z-index: 1;
+        }
+        
+        .left {
+            left: 0;
+        }
+        
+        .right {
+            left: 50%;
+        }
+        
+        .left::after {
+            right: -12px;
+        }
+        
+        .right::after {
+            left: -12px;
+        }
+        
+        .timeline-content {
+            padding: 20px;
+            background: var(--light-green);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* Responsive timeline */
+        @media screen and (max-width: 768px) {
+            .timeline::after {
+                left: 31px;
+            }
+            
+            .timeline-item {
+                width: 100%;
+                padding-left: 70px;
+                padding-right: 25px;
+            }
+            
+            .timeline-item::after {
+                left: 21px;
+            }
+            
+            .right {
+                left: 0;
+            }
+        }
+        
+        /* Sensor status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background:rgb(0, 162, 255);
+            box-shadow: 0 0 5px rgb(0, 217, 255);
+        }
+        
+        .status-warning {
+            background: #FFBB33;
+            box-shadow: 0 0 5px #FFBB33;
+        }
+        
+        .status-critical {
+            background: #FF4444;
+            box-shadow: 0 0 5px #FF4444;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            h2 {
+                font-size: 1.7rem;
+            }
+            
+            .toc-list {
+                columns: 1;
+            }
+            
+            .data-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .monitoring-button {
+                top: 15px;
+                right: 15px;
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Scroll to top button */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary-green);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        
+        .scroll-top.visible {
+            opacity: 1;
+        }
+        
+        .scroll-top:hover {
+            background: var(--dark-green);
+            transform: translateY(-3px);
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted var(--text-light);
+            cursor: help;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--text-dark);
+            color: var(--white);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Alert panel (hidden by default) -->
+    <div class="alert-panel" id="alertPanel">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="alertMessage">Alert: Potential oil spill detected in monitoring area!</span>
+    </div>
+
+    <!-- Real-time monitoring button -->
+    <a href="real time monitoring.html" class="monitoring-button">
+        <i class="fas fa-chart-line"></i>
+        Live Monitoring
+    </a>
+    
+
+    <!-- Scroll to top button -->
+    <div class="scroll-top" id="scrollTopBtn">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-oil-can" style="margin-right: 15px;"></i>Oil Spill Detection System</h1>
+            <p>Advanced environmental monitoring technology for marine protection</p>
+        </header>
+
+        <!-- Table of Contents -->
+        <div class="toc-container">
+            <h3 class="toc-title"><i class="fas fa-list-ul" style="margin-right: 10px;"></i>Navigation Menu</h3>
+            <ul class="toc-list">
+                <li><a href="#about"><i class="fas fa-info-circle"></i> About Oil Spill Detection</a></li>
+                <li><a href="#technology"><i class="fas fa-microscope"></i> Detection Technologies</a></li>
+                <li><a href="#sensors"><i class="fas fa-sensor"></i> Sensor Systems</a></li>
+                <li><a href="#deployment"><i class="fas fa-map-marked-alt"></i> Deployment Methods</a></li>
+               
+                <li><a href="#response"><i class="fas fa-fire-extinguisher"></i> Response Strategies</a></li>
+                
+                <li><a href="#references"><i class="fas fa-book"></i> References</a></li>
+            </ul>
+        </div>
+
+        <!-- About Section -->
+        <div class="content-section" id="about">
+            <h2><i class="fas fa-info-circle" style="margin-right: 15px;"></i>About Oil Spill Detection</h2>
+            <p>Oil spill detection systems are critical environmental monitoring technologies designed to identify and track petroleum product releases in marine and freshwater environments. These systems combine advanced sensor technologies with data analytics to provide early warning of contamination events, enabling rapid response to minimize ecological damage.</p>
+            
+            <p>Modern oil spill detection utilizes multiple complementary technologies to achieve high detection accuracy across various environmental conditions. These systems are deployed worldwide by environmental agencies, oil companies, and research institutions to protect aquatic ecosystems and comply with environmental regulations.</p>
+            
+            <div class="image-container">
+                <div class="image-card">
+                    <img src="csm_ShorelineCup_bulkoil_3aff549074.jpg" alt="Oil Spill Response">
+                    <div class="image-caption">Emergency response team working on an oil spill cleanup operation</div>
+                </div>
+                <div class="image-card">
+                    <img src="img-187.jpg" alt="Aerial Oil Slick">
+                    <div class="image-caption">Aerial view of an oil slick showing characteristic rainbow sheen</div>
+                </div>
+            </div>
+            
+            <h3><i class="fas fa-history"></i> Historical Context</h3>
+            <p>The development of oil spill detection technology has been driven by major environmental disasters:</p>
+            
+            <div class="timeline">
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h4>1967 Torrey Canyon</h4>
+                        <p>First major tanker spill (120,000 tons) highlighting need for detection systems and response protocols.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <h4>1989 Exxon Valdez</h4>
+                        <p>Led to Oil Pollution Act of 1990 and improved monitoring requirements for vessels.</p>
+                    </div>
+                </div>
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h4>2010 Deepwater Horizon</h4>
+                        <p>Accelerated development of deepwater detection systems and response technologies.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <h4>2021 Mauritius Spill</h4>
+                        <p>Demonstrated need for tropical environment monitoring solutions and coral reef protection.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technology Section -->
+        <div class="content-section" id="technology">
+            <h2><i class="fas fa-microscope" style="margin-right: 15px;"></i>Detection Technologies</h2>
+            <p>Oil spill detection systems employ multiple sensing modalities to achieve reliable performance across different environmental conditions. These technologies can be deployed on various platforms including satellites, aircraft, drones, ships, and fixed installations.</p>
+            
+            <div class="tech-specs">
+                <div class="spec-card">
+                    <h3><i class="fas fa-satellite"></i> Remote Sensing</h3>
+                    <ul>
+                        <li><strong>SAR (Synthetic Aperture Radar):</strong> Detects oil dampening of capillary waves</li>
+                        <li><strong>Multispectral Imaging:</strong> Identifies oil spectral signatures across bands</li>
+                        <li><strong>Infrared (IR):</strong> Detects temperature differences in oil films</li>
+                        <li><strong>UV Fluorescence:</strong> Excites aromatic compounds in oil</li>
+                        <li><strong>LIDAR:</strong> Laser fluorescence for precise thickness measurement</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h3><i class="fas fa-water"></i> In-Situ Sensors</h3>
+                    <ul>
+                        <li><strong>Fluorometers:</strong> Detect PAH fluorescence from oil</li>
+                        <li><strong>pH Sensors:</strong> Monitor water acidity changes from oil</li>
+                        <li><strong>Turbidity Sensors:</strong> Detect dispersed oil particles</li>
+                        <li><strong>Hydrocarbon Sensors:</strong> Direct chemical detection</li>
+                        <li><strong>Conductivity Sensors:</strong> Identify salinity changes</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="image-container">
+                <div class="image-card">
+                    <img src="ckdrg5zki0dn2x2qqi817ukfe-ckdopyakp02jm26pbwxyh7evk-system-diagram.full.jpg"="Detection System Diagram">
+                    <div class="image-caption">Schematic of integrated oil spill detection system components</div>
+                </div>
+                
+            </div>
+            
+            <h3><i class="fas fa-chart-line"></i> Detection Performance</h3>
+            <div class="data-panel">
+                <div class="data-row">
+                    <div class="data-item">
+                        <div>Minimum Detectable Thickness</div>
+                        <div class="data-value">0.1 µm</div>
+                        <div>For fluorometers</div>
+                    </div>
+                    <div class="data-item">
+                        <div>Maximum Coverage</div>
+                        <div class="data-value">500 km²</div>
+                        <div>Per satellite pass</div>
+                    </div>
+                    <div class="data-item">
+                        <div>Response Time</div>
+                        <div class="data-value">< 30 min</div>
+                        <div>For real-time systems</div>
+                    </div>
+                    <div class="data-item">
+                        <div>Accuracy</div>
+                        <div class="data-value">95%</div>
+                        <div>For SAR detection</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sensor Systems Section -->
+        <div class="content-section" id="sensors">
+            <h2><i class="fas fa-sensor" style="margin-right: 15px;"></i>Sensor Systems</h2>
+            <p>Modern oil spill detection systems integrate multiple sensor types to provide comprehensive monitoring capabilities. These systems are designed for continuous operation in harsh marine environments with minimal maintenance requirements.</p>
+            
+            <div class="tech-specs">
+                <div class="spec-card">
+                    <h3><i class="fas fa-satellite-dish"></i> Satellite Systems</h3>
+                    <ul>
+                        <li><strong>Sentinel-1 SAR:</strong> 5m resolution, 250km swath</li>
+                        <li><strong>MODIS:</strong> Daily coverage with 250m resolution</li>
+                        <li><strong>VIIRS:</strong> Nighttime detection capability</li>
+                        <li><strong>Envisat ASAR:</strong> Historical dataset for analysis</li>
+                        <li><strong>Radarsat-2:</strong> Fine-beam modes for small spills</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h3><i class="fas fa-drone"></i> Aerial & UAV Systems</h3>
+                    <ul>
+                        <li><strong>IR/UV Scanners:</strong> Real-time slick mapping</li>
+                        <li><strong>Laser Fluorosensors:</strong> Chemical identification</li>
+                        <li><strong>Hyperspectral Imagers:</strong> Oil type discrimination</li>
+                        <li><strong>Microwave Radiometers:</strong> All-weather operation</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h3><i class="fas fa-buoy"></i> Marine Sensor Packages</h3>
+                    <ul>
+                        <li><strong>Fluorometric Buoys:</strong> Continuous water monitoring</li>
+                        <li><strong>Smart Moorings:</strong> Multi-parameter stations</li>
+                        <li><strong>AUV Payloads:</strong> Mobile subsurface detection</li>
+                        <li><strong>Fixed Installations:</strong> Harbor and pipeline monitoring</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3><i class="fas fa-network-wired"></i> System Integration</h3>
+            <p>Modern detection systems integrate data from multiple sources to provide comprehensive monitoring:</p>
+            
+            <div class="image-container">
+                <div class="image-card">
+                    <img src="1-s2.0-S0269749121014664-ga1.jpg" alt="Integrated Monitoring System">
+                    <div class="image-caption">Integrated oil spill monitoring system architecture</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment Methods Section -->
+        <div class="content-section" id="deployment">
+            <h2><i class="fas fa-map-marked-alt" style="margin-right: 15px;"></i>Deployment Methods</h2>
+            <p>Effective oil spill monitoring requires strategic deployment of detection technologies based on risk assessment, environmental conditions, and operational requirements. Different deployment methods offer complementary advantages.</p>
+            
+            <div class="tech-specs">
+                <div class="spec-card">
+                    <h3><i class="fas fa-satellite"></i> Orbital Systems</h3>
+                    <ul>
+                        <li><span class="status-indicator status-active"></span> <strong>Global Coverage:</strong> Daily monitoring of large areas</li>
+                        <li><span class="status-indicator status-active"></span> <strong>All-weather:</strong> Radar systems penetrate clouds</li>
+                        <li><span class="status-indicator status-warning"></span> <strong>Resolution Limits:</strong> May miss small spills</li>
+                        <li><span class="status-indicator status-warning"></span> <strong>Revisit Time:</strong> Limited by orbital mechanics</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h3><i class="fas fa-plane"></i> Aerial Surveillance</h3>
+                    <ul>
+                        <li><span class="status-indicator status-active"></span> <strong>High Resolution:</strong> Detailed spill characterization</li>
+                        <li><span class="status-indicator status-active"></span> <strong>Rapid Deployment:</strong> On-demand monitoring</li>
+                        <li><span class="status-indicator status-warning"></span> <strong>Weather Dependent:</strong> Limited in poor conditions</li>
+                        <li><span class="status-indicator status-warning"></span> <strong>Cost:</strong> Expensive to operate</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h3><i class="fas fa-water"></i> Marine Networks</h3>
+                    <ul>
+                        <li><span class="status-indicator status-active"></span> <strong>Continuous:</strong> 24/7 monitoring</li>
+                        <li><span class="status-indicator status-active"></span> <strong>Local Precision:</strong> High sensitivity</li>
+                        <li><span class="status-indicator status-critical"></span> <strong>Limited Range:</strong> Point measurements</li>
+                        <li><span class="status-indicator status-warning"></span> <strong>Maintenance:</strong> Requires servicing</li>
+                    </ul>
+                </div>
+            </div>
+            
+            
+        </div>
+
+        
+
+        <!-- Response Strategies Section -->
+        <div class="content-section" id="response">
+            <h2><i class="fas fa-fire-extinguisher" style="margin-right: 15px;"></i>Response Strategies</h2>
+            <p>Effective response to oil spills requires coordinated action based on accurate detection data. Response strategies are tailored to spill characteristics and environmental conditions.</p>
+            
+            <div class="image-container">
+                <div class="image-card">
+                    <img src="download.jpg" alt="Containment Boom">
+                    <div class="image-caption">Deployment of containment boom to restrict oil spread</div>
+                </div>
+                <div class="image-card">
+                    <img src="images.jpg" alt="Dispersant Application">
+                    <div class="image-caption">Aerial application of chemical dispersants to break up oil</div>
+                </div>
+            </div>
+            
+            <h3><i class="fas fa-clock"></i> Response Timeline</h3>
+            <p>Effective spill response follows a critical timeline:</p>
+            
+            <div class="data-panel">
+                <div class="data-row">
+                    <div class="data-item">
+                        <div>First Response</div>
+                        <div class="data-value">< 2h</div>
+                        <div>Initial containment</div>
+                    </div>
+                    <div class="data-item">
+                        <div>Full Assessment</div>
+                        <div class="data-value">< 6h</div>
+                        <div>Spill characterization</div>
+                    </div>
+                    <div class="data-item">
+                        <div>Cleanup Initiation</div>
+                        <div class="data-value">< 24h</div>
+                        <div>Recovery operations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <!-- References Section -->
+        <div class="references" id="references">
+            <h2><i class="fas fa-book" style="margin-right: 15px;"></i>References & Resources</h2>
+            <ul>
+                <li><a href="https://response.restoration.noaa.gov/oil-and-chemical-spills/oil-spills" target="_blank">NOAA Oil Spill Response</a> - Comprehensive resource on spill science and response</li>
+                <li><a href="https://www.itopf.org/knowledge-resources/documents-guides/" target="_blank">ITOPF Technical Guides</a> - Industry standards for spill detection</li>
+                <li><a href="https://www.epa.gov/emergency-response/oil-spill-monitoring-handbook" target="_blank">EPA Monitoring Handbook</a> - Regulatory guidelines for spill detection</li>
+                <li><a href="https://www.sciencedirect.com/topics/earth-and-planetary-sciences/oil-slick" target="_blank">Oil Spill Detection Science</a> - Peer-reviewed technical information</li>
+                <li><a href="https://www.boem.gov/environment/environmental-studies" target="_blank">BOEM Environmental Studies</a> - Research on oil spill impacts</li>
+                <li><a href="https://www.imo.org/en/OurWork/Environment/Pages/OilPollution.aspx" target="_blank">IMO Oil Pollution</a> - International maritime regulations</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p><i class="fas fa-oil-can" style="margin-right: 10px;"></i>Oil Spill Detection System | © 2023 Environmental Monitoring Technologies</p>
+            <p>This is a demonstration interface for educational purposes</p>
+            <p style="margin-top: 1rem;">
+                <a href="#" style="color: var(--primary-green); margin: 0 10px;"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="#" style="color: var(--primary-green); margin: 0 10px;"><i class="fas fa-file-pdf"></i> Documentation</a>
+                <a href="#" style="color: var(--primary-green); margin: 0 10px;"><i class="fas fa-database"></i> API Access</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize charts
+        const waterCtx = document.getElementById('waterQualityChart').getContext('2d');
+        const waterQualityChart = new Chart(waterCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Hydrocarbon Concentration (ppm)',
+                    data: [0.05, 0.03, 0.02, 0.04, 0.02, 0.01, 0.02],
+                    borderColor: '#2e7d32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Water Quality Index',
+                    data: [85, 88, 90, 89, 92, 94, 93],
+                    borderColor: '#1b5e20',
+                    backgroundColor: 'rgba(27, 94, 32, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Hydrocarbon (ppm)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Quality Index'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        }
+                    }
+                }
+            }
+        });
+
+        // Impact chart
+        const impactCtx = document.getElementById('impactChart').getContext('2d');
+        const impactChart = new Chart(impactCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Response Time', 'Oil Type', 'Spill Volume', 'Environmental Conditions', 'Cleanup Methods'],
+                datasets: [{
+                    data: [35, 25, 20, 15, 5],
+                    backgroundColor: [
+                        '#2e7d32',
+                        '#4caf50',
+                        '#81c784',
+                        '#a5d6a7',
+                        '#c8e6c9'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Relative Impact Factors'
+                    }
+                }
+            }
+        });
+
+        // Initialize map
+        const map = L.map('spillMap').setView([29.9511, -90.0715], 10); // New Orleans area as example
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add sensor markers
+        const sensorIcon = L.divIcon({
+            className: 'sensor-icon',
+            html: '<i class="fas fa-sensor" style="color: #2e7d32; font-size: 20px;"></i>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+        
+        // Example sensor locations
+        const sensorLocations = [
+            { lat: 29.9611, lng: -90.0815, name: 'Buoy #1', status: 'active' },
+            { lat: 29.9411, lng: -90.0615, name: 'Buoy #2', status: 'active' },
+            { lat: 29.9311, lng: -90.0515, name: 'Buoy #3', status: 'warning' },
+            { lat: 29.9211, lng: -90.0415, name: 'Buoy #4', status: 'critical' },
+            { lat: 29.9111, lng: -90.0315, name: 'Buoy #5', status: 'active' }
+        ];
+        
+        sensorLocations.forEach(sensor => {
+            let marker = L.marker([sensor.lat, sensor.lng], {
+                icon: sensorIcon
+            }).addTo(map);
+            
+            marker.bindPopup(`<b>${sensor.name}</b><br>Status: ${sensor.status.toUpperCase()}`);
+        });
+        
+        // Add example spill area
+        const spillArea = L.polygon([
+            [29.9461, -90.0665],
+            [29.9461, -90.0565],
+            [29.9361, -90.0565],
+            [29.9361, -90.0665]
+        ], {
+            color: '#ff4444',
+            fillColor: '#ff4444',
+            fillOpacity: 0.3,
+            weight: 2
+        }).addTo(map);
+        
+        spillArea.bindPopup("<b>Potential Oil Slick</b><br>Detected: 2023-06-15<br>Area: 0.5 km²");
+
+        // Scroll to top button
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        });
+        
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Simulate alert (for demo purposes)
+        setTimeout(() => {
+            const alertPanel = document.getElementById('alertPanel');
+            alertPanel.style.display = 'flex';
+            
+            setTimeout(() => {
+                alertPanel.style.display = 'none';
+            }, 10000);
+        }, 5000);
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Tooltip initialization
+        document.querySelectorAll('.tooltip').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                const tooltip = this.querySelector('.tooltiptext');
+                tooltip.style.visibility = 'visible';
+                tooltip.style.opacity = '1';
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                const tooltip = this.querySelector('.tooltiptext');
+                tooltip.style.visibility = 'hidden';
+                tooltip.style.opacity = '0';
+            });
+        });
+    </script>
+</body>
+</html>

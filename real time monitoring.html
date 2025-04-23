@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Oil Spill Monitoring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --secondary-color: #4caf50;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --dark-color: #1b5e20;
+            --light-color: #e8f5e9;
+            --text-dark: #263238;
+            --text-light: #eceff1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: var(--text-dark);
+        }
+        
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header h1 i {
+            margin-right: 10px;
+        }
+        
+        .back-btn {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        
+        .back-btn:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+        
+        .back-btn i {
+            margin-right: 5px;
+        }
+        
+        .dashboard-container {
+            padding: 20px;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .status-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .sensor-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .sensor-label {
+            font-size: 0.9rem;
+            color: #757575;
+        }
+        
+        .map-container {
+            height: 400px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            margin: 0 0 15px 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+        
+        .alert {
+            padding: 15px;
+            background-color: #ffebee;
+            border-left: 4px solid var(--danger-color);
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            animation: pulse 2s infinite;
+        }
+        
+        .alert i {
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: var(--danger-color);
+        }
+        
+        .alert-content h3 {
+            margin: 0 0 5px 0;
+            color: var(--danger-color);
+        }
+        
+        .alert-content p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-oil-can"></i> Real-Time Oil Spill Monitor</h1>
+        <button class="back-btn" id="backBtn">
+            <i class="fas fa-arrow-left"></i> 
+            back
+        </button>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="alert" id="oilSpillAlert" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="alert-content">
+                <h3>OIL SPILL DETECTED!</h3>
+                <p id="alertMessage">A potential oil spill has been detected at the marked location. Immediate action recommended.</p>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="sensor-label">pH Level</div>
+                <div class="sensor-value" id="phValue">7.2</div>
+                <div class="sensor-unit">Normal range: 6.5 - 8.5</div>
+            </div>
+            <div class="status-item">
+                <div class="sensor-label">Oil Concentration</div>
+                <div class="sensor-value" id="oilValue">0.02</div>
+                <div class="sensor-unit">Alert threshold: > 0.1 ppm</div>
+            </div>
+            <div class="status-item">
+                <div class="sensor-label">Temperature</div>
+                <div class="sensor-value" id="tempValue">24.5</div>
+                <div class="sensor-unit">Normal range: 18 - 30°C</div>
+            </div>
+        </div>
+        
+        <div class="map-container" id="map"></div>
+        
+        <div class="chart-container">
+            <h3 class="chart-title">pH Level History</h3>
+            <canvas id="phChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3 class="chart-title">Oil Concentration History</h3>
+            <canvas id="oilChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Back button functionality
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.history.back();
+        });
+        
+        // Initialize the map
+        const map = L.map('map').setView([12.3456, -98.7654], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Current location marker
+        const marker = L.marker([12.3456, -98.7654]).addTo(map)
+            .bindPopup('Current sensor location<br>pH: 7.2 (Normal)');
+        
+        // Spill marker (initially hidden)
+        const spillMarker = L.circleMarker([12.3456, -98.7654], {
+            radius: 10,
+            color: '#f44336',
+            fillColor: '#f44336',
+            fillOpacity: 0.7,
+            opacity: 0
+        }).addTo(map);
+        
+        // Initialize charts
+        const phCtx = document.getElementById('phChart').getContext('2d');
+        const phChart = new Chart(phCtx, {
+            type: 'line',
+            data: {
+                labels: Array(24).fill().map((_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'pH Level',
+                    data: Array(24).fill().map(() => 6.5 + Math.random() * 2),
+                    borderColor: '#2e7d32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 14,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                }
+            }
+        });
+        
+        const oilCtx = document.getElementById('oilChart').getContext('2d');
+        const oilChart = new Chart(oilCtx, {
+            type: 'line',
+            data: {
+                labels: Array(24).fill().map((_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Hydrocarbon Concentration (ppm)',
+                    data: Array(24).fill().map(() => Math.random() * 0.1),
+                    borderColor: '#4caf50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 0.5
+                    }
+                }
+            }
+        });
+        
+        // Generate random sensor data
+        function generateSensorData() {
+            // Random values within reasonable ranges
+            const ph = (6 + Math.random() * 3).toFixed(2); // pH between 6-9
+            const oil = (Math.random() * 0.15).toFixed(3); // Oil between 0-0.15 ppm
+            const temp = (20 + Math.random() * 10).toFixed(1); // Temp between 20-30°C
+            
+            // Small random movement
+            const lat = 12.3456 + (Math.random() * 0.002 - 0.001);
+            const lng = -98.7654 + (Math.random() * 0.002 - 0.001);
+            
+            return {
+                ph: ph,
+                oil: oil,
+                temp: temp,
+                lat: lat,
+                lng: lng
+            };
+        }
+        
+        // Update the display with new data
+        function updateDisplay() {
+            const data = generateSensorData();
+            
+            // Update current readings
+            document.getElementById('phValue').textContent = data.ph;
+            document.getElementById('oilValue').textContent = data.oil;
+            document.getElementById('tempValue').textContent = data.temp;
+            
+            // Check for alerts
+            if (data.oil > 0.1 || data.ph < 6.5 || data.ph > 8.5) {
+                document.getElementById('oilSpillAlert').style.display = 'flex';
+                document.getElementById('alertMessage').textContent = 
+                    `Potential oil spill detected at ${data.lat.toFixed(4)}°N, ${Math.abs(data.lng).toFixed(4)}°W. ` +
+                    `pH: ${data.ph}, Oil: ${data.oil}ppm`;
+                
+                // Show spill marker
+                spillMarker.setLatLng([data.lat, data.lng]);
+                spillMarker.setOpacity(1);
+                spillMarker.bindPopup(`Oil spill detected<br>pH: ${data.ph}<br>Oil: ${data.oil}ppm`);
+            } else {
+                document.getElementById('oilSpillAlert').style.display = 'none';
+                spillMarker.setOpacity(0);
+            }
+            
+            // Update marker position
+            marker.setLatLng([data.lat, data.lng]);
+            marker.setPopupContent(`Current sensor location<br>pH: ${data.ph}<br>Oil: ${data.oil}ppm`);
+            
+            // Update charts
+            phChart.data.datasets[0].data.shift();
+            phChart.data.datasets[0].data.push(parseFloat(data.ph));
+            phChart.update();
+            
+            oilChart.data.datasets[0].data.shift();
+            oilChart.data.datasets[0].data.push(parseFloat(data.oil));
+            oilChart.update();
+        }
+        
+        // Update every 3 seconds
+        setInterval(updateDisplay, 3000);
+        updateDisplay(); // Initial update
+    </script>
+</body>
+</html>
